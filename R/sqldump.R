@@ -1,6 +1,6 @@
 #' Import session-based SQL files in a MySQL database
 #'
-#' This function import session-based SQL files into a MySQL database.
+#' This function imports session-based SQL files into a MySQL database.
 #'
 #' This function requires a running MySQL database (see: https://www.mysql.com/)
 #' @param path_to_data Folder with data files in it
