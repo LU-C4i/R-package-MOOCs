@@ -3,32 +3,28 @@
 #' This function import session-based SQL files into a MySQL database.
 #'
 #' This function requires a running MySQL database (see: https://www.mysql.com/)
-#' @param url full url of the video
-#' @param runtime length of video in HH:MM:SS
-#' @param db_map csv file that connects the course to the correct mongodb and SQL file.
-#' @param course_and_session name of the course + session name (e.g. "metals001")
-#' @param return_df Logical. Return a data frame with results? Defaults to TRUE
-#' @param issue.log If TRUE, this will keep a log of important actions for debugging purposes.
-#' @param Logical. safety Save each result to an Rdata file? Defaults to FALSE
-#' @param safety.folder.path Defaults to NULL. If user uses safety argument, safety.folder.path can be used to specify a folder in which to save intermediate results.
-#' @param issue.log.path Choose the path where the log file will be stored. Defaults to "~/", but user will be required to give a new path to avoid problems.
-#' @seealso \code{\link{filterStudents}}
+#' @param path_to_data Folder with data files in it
+#' @param type Which dataset should be stored?
+#' @param user Username for MySQL database. Defaults to 'root'
+#' @param password Password for MySQL database. Defaults to 'root'
+#' @param verbose Print verbose intermediate messages? Defaults to FALSE
+#' @seealso \code{\link{mongoDump}}
 #' @examples \dontrun{
 #' # Query for each url with questions for course 'configuringworld001'
 #' res <- actions_at_intervals(url, runtime, db_map, "configuringworld001", return_df = FALSE, issue.log = TRUE)
 #' }
 #' @author Jasper Ginn
-#' @importFrom rjson fromJSON
-#' @importFrom data.table rbindlist
+#' @importFrom RMySQL dbConnect, dbSendQuery, fetch, dbClearResult, dbDisconnect
+#' @importFrom stringr str_extract, str_replace_all
+#' @importFrom R.utils gunzip
 #' @export
 
-dumpSQL <- function(path_to_data, # Folder with data files in it
-                    type = c("general", "forum", "unanonymizable", "hash_mapping"), # Which dataset should be stored?
-                    append_to_dataMap = F, # Append the dataset to a dataset keeping track of all table names?
-                    user = "root", # Username for MySQL database. Defaults to 'root'
-                    password = "root", # Password for MySQL database. Defaults to 'root'
-                    verbose = FALSE)
-{
+dumpSQL <- function(path_to_data,
+                    type = c("general", "forum", "unanonymizable", "hash_mapping"),
+                    #append_to_dataMap = F, # Append the dataset to a dataset keeping track of all table names?
+                    user = "root",
+                    password = "root",
+                    verbose = FALSE) {
   # match arg
   type = match.arg(type)
 
