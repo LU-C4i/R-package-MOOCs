@@ -13,8 +13,7 @@
 #' dumpSQL("/home/jasper/Documents/MOOC-DATA/Data_Dumps/federalism-001","forum",verbose = TRUE)
 #' }
 #' @author Jasper Ginn
-#' @importFrom rmongodb mongo.create mongo.is.connected mongo.get.database.collections mongo.destroy
-#' @importFrom DBI dbClearResult dbConnect dbSendQuery fetch dbDisconnect
+#' @importFrom rmongodb mongo.create mongo.is.connected mongo.get.database.collections mongo.destroy mongo.index.create
 #' @importFrom stringr str_extract str_replace_all
 #' @importFrom R.utils gunzip
 #' @export
@@ -82,7 +81,7 @@ mongodump <- function(path_to_clickstream,
 
   # If verbose
   if(verbose == TRUE) {
-    verboseM(path_to_data, fp_index$course_name_type, user, password)
+    verboseM(path_to_clickstream, database, fp_index$collection, ...)
   }
 
   # Dump table
@@ -98,7 +97,7 @@ mongodump <- function(path_to_clickstream,
     } else {
       # Create mongo connection to localhost
       mongo <- mongo.create(db = database, ...)
-      # Get all collections
+      # Create index
       if(mongo.is.connected(mongo) == TRUE) {
         mongo.index.create(mongo, paste0(database, ".", fp_index$collection), list("username"=1))
       }
@@ -107,8 +106,9 @@ mongodump <- function(path_to_clickstream,
     }
   }
 
-
   # Remove unzipped files
   res <- unlink(fp_index$unzipped_file_path, recursive = T)
 
+  # Return TRUE
+  return(TRUE)
 }
