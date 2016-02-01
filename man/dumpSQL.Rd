@@ -19,21 +19,21 @@ dumpSQL(path_to_data, type = c("general", "forum", "unanonymizable",
 \item{verbose}{Print verbose intermediate messages? Defaults to FALSE}
 }
 \description{
-This function import session-based SQL files into a MySQL database.
+This function imports session-based SQL files into a MySQL database.
 }
 \details{
 This function requires a running MySQL database (see: https://www.mysql.com/)
 }
 \examples{
 \dontrun{
-# Query for each url with questions for course 'configuringworld001'
-res <- actions_at_intervals(url, runtime, db_map, "configuringworld001", return_df = FALSE, issue.log = TRUE)
+# Dump forum SQL file for federalism course
+dumpSQL("/home/jasper/Documents/MOOC-DATA/Data_Dumps/federalism-001","forum",verbose = TRUE)
 }
 }
 \author{
 Jasper Ginn
 }
 \seealso{
-\code{\link{mongoDump}}
+\code{\link{mongodump}}
 }
 
