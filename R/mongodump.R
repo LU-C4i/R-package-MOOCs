@@ -13,58 +13,50 @@
 #' dumpSQL("/home/jasper/Documents/MOOC-DATA/Data_Dumps/federalism-001","forum",verbose = TRUE)
 #' }
 #' @author Jasper Ginn
-#' @importFrom RMySQL MySQL
+#' @importFrom rmongodb mongo.create mongo.is.connected mongo.get.database.collections mongo.destroy
 #' @importFrom DBI dbClearResult dbConnect dbSendQuery fetch dbDisconnect
 #' @importFrom stringr str_extract str_replace_all
 #' @importFrom R.utils gunzip
 #' @export
 
 mongodump <- function(path_to_clickstream,
+                      database = 'moocs',
                       user = NULL,
                       password = NULL,
                       verbose = FALSE) {
 
   # verbose message
-  verboseM <- function(path_to_data, sql_db, user, password) {
+  verboseM <- function(path_to_clickstream, database, user, password) {
     q1 <- paste0("Now storing file ", "'",path_to_data,"'")
     q2 <- paste0("To database ", "'",sql_db,"'")
     q3 <- paste0("With username ", "'",user,"'", " and password ", "'",password,"'")
     cat(q1,"\n", q2, "\n",q3)
   }
 
-  # Helper 1: Get list of tables in MySQL db -----
+  # Helper 1: Get list of collections in mongo db -----
 
-  getTables <- function(user, password, database) {
-    # Connect to mysql db
-    db <- dbConnect(MySQL(), username = user, password=password)
-    # Statement
-    query <- "SHOW DATABASES;"
-    # List databases
-    res <- dbSendQuery(db, query)
-    # Fetch
-    fetchRes <- fetch(res, n=-1)
-    # Clear result
-    dbClearResult(res)
-    # Disconnect
-    dbDisconnect(db)
+  getTables <- function(user, password, database, collection) {
+    # Create mongo connection to localhost
+    mongo <- mongo.create(db = database)
+    # Get all collections
+    if(mongo.is.connected(mongo) == TRUE) {
+      colls <- mongo.get.database.collections(mongo, database)
+    }
+    # Destroy
+    mongo.destroy(mongo)
     # Check
-    check <- ifelse(database %in% fetchRes[,1], TRUE, FALSE)
+    check <- ifelse(paste0(database, ".", collection) %in% colls, TRUE, FALSE)
     return(check)
   }
 
   # Helper 2: list files in folder, take the right one and return file, destination file etc. in a list ----
 
-  folderIndex <- function(path_to_data, type, user, password) {
-    # List files in data folder
-    files <- list.files(path_to_data)
-    # Grep the one that matches type
-    file <- files[grepl(type, tolower(files))]
+  folderIndex <- function(path_to_clickstream, user, password) {
     # Take course name
-    course_name <- str_extract(file, "\\(([^\\)]+)\\)")
+    course_name <- str_split(path_to_clickstream, "/")
+    course_name <- gsub("_clickstream_export.gz", "", course_name[[1]][length(course_name[[1]])])
     # strip special characters
     course_name <- str_replace_all(course_name, "[[:punct:]]", "")
-    # append type
-    course_name <- paste0(course_name, "_", type)
     # Check if exists
     check <- getTables(user, password, course_name)
     if(check == TRUE) {
