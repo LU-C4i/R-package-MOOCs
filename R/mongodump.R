@@ -51,34 +51,28 @@ mongodump <- function(path_to_clickstream,
 
   # Helper 2: list files in folder, take the right one and return file, destination file etc. in a list ----
 
-  folderIndex <- function(path_to_clickstream, user, password) {
+  folderIndex <- function(path_to_clickstream, user, password, database) {
     # Take course name
     course_name <- str_split(path_to_clickstream, "/")
     course_name <- gsub("_clickstream_export.gz", "", course_name[[1]][length(course_name[[1]])])
     # strip special characters
     course_name <- str_replace_all(course_name, "[[:punct:]]", "")
     # Check if exists
-    check <- getTables(user, password, course_name)
+    check <- getTables(user, password, database, course_name)
     if(check == TRUE) {
-      stop("Table already exists in MySQL database.")
+      stop("Collection already exists in mongo database.")
     }
-    # create temporary folder for unzipped files
-    tempFolder <- paste0(type, "_unzipped")
-    # Create path to zipped file
-    fPath <- paste0(path_to_data, "/", file)
-    # filepath for unzipped sql file
-    sql_fp <- paste0(path_to_data, "/", tempFolder, "/", course_name, ".sql")
+    # Create filepath for unzipped file
+    UF <- gsub(".gz", "", path_to_clickstream)
     # unzip if not exists
-    if(!paste0(course_name, ".sql") %in% list.files(sql_fp)) {
-      gunzip(fPath, destname = sql_fp, remove = F)
+    if(!file.exists(UF)) {
+      gunzip(path_to_clickstream, destname = UF, remove = F)
     } else {
       print("File already unzipped. Moving on.")
     }
     # Return list with info
-    return(list("gzip_file" = fPath,
-                "sql_file_folder" = paste0(path_to_data, "/", tempFolder),
-                "sql_file" = sql_fp,
-                "course_name_type" = course_name))
+    return(list("collection" = course_name,
+                "unzipped_file_path" = UF))
   }
 
   # Helper 2: Send queries to SQL -----
