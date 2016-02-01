@@ -3,9 +3,9 @@
 #' This function imports session-based JSON clickstream files into a mongodb database.
 #'
 #' This function requires a running mongodb database (see: https://www.mongodb.org/)
-#' @param path_to_clickstream Path to compressed archive with clickstream files
-#' @param user Username for mongodb database. Defaults to NULL
-#' @param password Password for mongodb database. Defaults to NULL
+#' @param path_to_clickstream Path to compressed archive with clickstream file
+#' @param database database in which to store the collection of clickstream data (collection will be defined as course name)
+#' @param create_index Mongo can create an index on usernames, which speeds up queries considerably. Defaults to TRUE
 #' @param verbose Print verbose intermediate messages? Defaults to FALSE
 #' @seealso \code{\link{sqldump}}
 #' @examples \dontrun{
