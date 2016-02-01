@@ -1,0 +1,138 @@
+#' Import session-based SQL files in a MySQL database
+#'
+#' This function import session-based SQL files into a MySQL database.
+#'
+#' This function requires a running MySQL database (see: https://www.mysql.com/)
+#' @param url full url of the video
+#' @param runtime length of video in HH:MM:SS
+#' @param db_map csv file that connects the course to the correct mongodb and SQL file.
+#' @param course_and_session name of the course + session name (e.g. "metals001")
+#' @param return_df Logical. Return a data frame with results? Defaults to TRUE
+#' @param issue.log If TRUE, this will keep a log of important actions for debugging purposes.
+#' @param Logical. safety Save each result to an Rdata file? Defaults to FALSE
+#' @param safety.folder.path Defaults to NULL. If user uses safety argument, safety.folder.path can be used to specify a folder in which to save intermediate results.
+#' @param issue.log.path Choose the path where the log file will be stored. Defaults to "~/", but user will be required to give a new path to avoid problems.
+#' @seealso \code{\link{filterStudents}}
+#' @examples \dontrun{
+#' # Query for each url with questions for course 'configuringworld001'
+#' res <- actions_at_intervals(url, runtime, db_map, "configuringworld001", return_df = FALSE, issue.log = TRUE)
+#' }
+#' @author Jasper Ginn
+#' @importFrom rjson fromJSON
+#' @importFrom data.table rbindlist
+#' @export
+
+dumpSQL <- function(path_to_data, # Folder with data files in it
+                    type = c("general", "forum", "unanonymizable", "hash_mapping"), # Which dataset should be stored?
+                    append_to_dataMap = F, # Append the dataset to a dataset keeping track of all table names?
+                    user = "root", # Username for MySQL database. Defaults to 'root'
+                    password = "root", # Password for MySQL database. Defaults to 'root'
+                    verbose = FALSE)
+{
+  # match arg
+  type = match.arg(type)
+
+  # verbose message
+  verbose <- function(path_to_data, sql_db, user, password) {
+    q1 <- paste0("Now storing file ", "'",path_to_data,"'")
+    q2 <- paste0("To database ", "'",sql_db,"'")
+    q3 <- paste0("With username ", "'",user,"'", " and password ", "'",password,"'")
+    cat(q1,"\n", q2, "\n",q3)
+  }
+
+  # Helper 1: Get list of tables in MySQL db -----
+
+  getTables <- function(user, password, database) {
+    # Connect to mysql db
+    db <- dbConnect(MySQL(), username = user, password=password)
+    # Statement
+    query <- "SHOW DATABASES;"
+    # List databases
+    res <- dbSendQuery(db, query)
+    # Fetch
+    fetchRes <- fetch(res, n=-1)
+    # Clear result
+    dbClearResult(res)
+    # Disconnect
+    dbDisconnect(db)
+    # Check
+    check <- ifelse(database %in% fetchRes[,1], TRUE, FALSE)
+    return(check)
+  }
+
+  # Helper 1: list files in folder, take the right one and return file, destination file etc. in a list ----
+
+  folderIndex <- function(path_to_data, type, user, password) {
+    # List files in data folder
+    files <- list.files(path_to_data)
+    # Grep the one that matches type
+    file <- files[grepl(type, tolower(files))]
+    # Take course name
+    course_name <- str_extract(file, "\\(([^\\)]+)\\)")
+    # strip special characters
+    course_name <- str_replace_all(course_name, "[[:punct:]]", "")
+    # append type
+    course_name <- paste0(course_name, "_", type)
+    # Check if exists
+    check <- getTables(user, password, course_name)
+    if(check == TRUE) {
+      stop("Database already exists in MySQL database.")
+    }
+    # create temporary folder for unzipped files
+    tempFolder <- paste0(type, "_unzipped")
+    # Create path to zipped file
+    fPath <- paste0(path_to_data, "/", file)
+    # filepath for unzipped sql file
+    sql_fp <- paste0(path_to_data, "/", tempFolder, "/", course_name, ".sql")
+    # unzip if not exists
+    if(!paste0(course_name, ".sql") %in% files) {
+      gunzip(fPath, destname = sql_fp, remove = F)
+    } else {
+      print("File already unzipped. Moving on.")
+    }
+    # Return list with info
+    return(list("gzip_file" = fPath,
+                "sql_file_folder" = paste0(path_to_data, "/", tempFolder),
+                "sql_file" = sql_fp,
+                "course_name_type" = course_name))
+  }
+
+  # Helper 2: Send queries to SQL -----
+
+  SQLQuery <- function(query, user, password) {
+    # Connect to mysql db
+    db <- dbConnect(MySQL(), username = user, password=password)
+    # Send query
+    res <- dbSendQuery(db, query)
+    # Clear result
+    dbClearResult(res)
+    # Disconnect
+    dbDisconnect(db)
+    return(TRUE)
+  }
+
+  # Call helper 1
+  fp_index <- folderIndex(path_to_data, type, user, password)
+
+  # If verbose
+  if(verbose == TRUE) {
+    verbose(path_to_data, fp_index$course_name_type, user, password)
+  }
+
+  # Drop table
+  res <- SQLQuery(paste0("DROP DATABASE IF EXISTS ", fp_index$course_name_type, ";"), user, password)
+  # Create table
+  res <- SQLQuery(paste0("CREATE DATABASE ", fp_index$course_name_type, ";"), user, password)
+
+  # Dump sql file
+  command_to_system <- paste0("mysql -u ", user, " -p", password, " -D ", fp_index$course_name_type, " < ", fp_index$sql_file)
+  system(command_to_system)
+
+  # Remove unzipped files
+  res <- unlink(fp_index$sql_file_folder, recursive = T)
+
+  # ADD LATER: APPEND THE COURSE / SQL FILE TO A DATA MAP R FILE
+
+  # Return TRUE
+  return(TRUE)
+}
