@@ -87,7 +87,8 @@ mongodump <- function(path_to_clickstream,
   # Dump table
   command_to_system <- paste0("mongoimport -d ", database,
                               " -c ", fp_index$collection, " --type json --file ",
-                              fp_index$unzipped_file_path)
+                              fp_index$unzipped_file_path,
+                              " --jsonArray")
   system(command_to_system)
 
   # Create index on usernames to increase speed
