@@ -26,10 +26,12 @@ mongodump <- function(path_to_clickstream,
                       ...) {
 
   # verbose message
-  verboseM <- function(path_to_clickstream, database, user, password) {
-    q1 <- paste0("Now storing file ", "'",path_to_data,"'")
-    q2 <- paste0("To database ", "'",sql_db,"'")
-    q3 <- paste0("With username ", "'",user,"'", " and password ", "'",password,"'")
+  verboseM <- function(path_to_clickstream, database, collection, ...) {
+    q1 <- paste0("Now storing file ", "'",path_to_clickstream,"'")
+    q2 <- paste0("To database ", "'",database,"'", " and collection ", "'", collection, "'")
+    q3 <- ifelse(create_index == T,
+                 paste0("Mongo will create an index on username to increase lookup speed"),
+                 paste0("Mongo will not create an index on username"))
     cat(q1,"\n", q2, "\n",q3)
   }
 
@@ -88,7 +90,22 @@ mongodump <- function(path_to_clickstream,
                               " -c ", fp_index$collection, " --type json --file ",
                               fp_index$unzipped_file_path)
   system(command_to_system)
-  # Create index type
+
+  # Create index on usernames to increase speed
+  if(create_index == TRUE) {
+    if(getTables(database, fp_index$collection) != TRUE) {
+      stop("Collection was not imported properly. Cannot create index on username.")
+    } else {
+      # Create mongo connection to localhost
+      mongo <- mongo.create(db = database, ...)
+      # Get all collections
+      if(mongo.is.connected(mongo) == TRUE) {
+        mongo.index.create(mongo, paste0(database, ".", fp_index$collection), list("username"=1))
+      }
+      # Destroy
+      mongo.destroy(mongo)
+    }
+  }
 
 
   # Remove unzipped files
