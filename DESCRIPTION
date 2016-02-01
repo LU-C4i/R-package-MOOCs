@@ -1,10 +1,17 @@
-Package: RMOOCs
+Package: MOOCs
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Convenience functions to work with Coursera Export Data
 Version: 0.1
-Date: 2015-11-30
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
-LazyData: TRUE
+Date: 2015-07-18
+Author: "Jasper Ginn", role=c("aut", "cre"), email="j.h.ginn@cdh.leidenuniv.nl"
+Maintainer: Jasper Ginn <jj.h.ginn@cdh.leidenuniv.nl>
+Description: Convenience functions to work with Coursera Export Data
+Imports:
+    DBI,
+    RPostgreSQL
+Depends:
+    R (>= 2.15.0)
+License: GPL3
+URL: https://github.com/LU-C4i/R-package-MOOCs
+LazyData: false
+BugReports: https://github.com/LU-C4i/R-package-MOOCs/issues
