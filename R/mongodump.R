@@ -21,9 +21,9 @@
 
 mongodump <- function(path_to_clickstream,
                       database = 'moocs',
-                      user = NULL,
-                      password = NULL,
-                      verbose = FALSE) {
+                      create_index = TRUE,
+                      verbose = FALSE,
+                      ...) {
 
   # verbose message
   verboseM <- function(path_to_clickstream, database, user, password) {
@@ -35,9 +35,9 @@ mongodump <- function(path_to_clickstream,
 
   # Helper 1: Get list of collections in mongo db -----
 
-  getTables <- function(user, password, database, collection) {
+  getTables <- function(database, collection, ...) {
     # Create mongo connection to localhost
-    mongo <- mongo.create(db = database)
+    mongo <- mongo.create(db = database, ...)
     # Get all collections
     if(mongo.is.connected(mongo) == TRUE) {
       colls <- mongo.get.database.collections(mongo, database)
@@ -51,14 +51,14 @@ mongodump <- function(path_to_clickstream,
 
   # Helper 2: list files in folder, take the right one and return file, destination file etc. in a list ----
 
-  folderIndex <- function(path_to_clickstream, user, password, database) {
+  folderIndex <- function(path_to_clickstream, database, ...) {
     # Take course name
     course_name <- str_split(path_to_clickstream, "/")
     course_name <- gsub("_clickstream_export.gz", "", course_name[[1]][length(course_name[[1]])])
     # strip special characters
     course_name <- str_replace_all(course_name, "[[:punct:]]", "")
     # Check if exists
-    check <- getTables(user, password, database, course_name)
+    check <- getTables(database, course_name, ...)
     if(check == TRUE) {
       stop("Collection already exists in mongo database.")
     }
@@ -75,38 +75,23 @@ mongodump <- function(path_to_clickstream,
                 "unzipped_file_path" = UF))
   }
 
-  # Helper 2: Send queries to SQL -----
-
-  SQLQuery <- function(query, user, password) {
-    # Connect to mysql db
-    db <- dbConnect(MySQL(), username = user, password=password)
-    # Send query
-    res <- dbSendQuery(db, query)
-    # Clear result
-    dbClearResult(res)
-    # Disconnect
-    dbDisconnect(db)
-    return(TRUE)
-  }
-
   # Call helper 1
-  fp_index <- folderIndex(path_to_data, type, user, password)
+  fp_index <- folderIndex(path_to_clickstream, database, ...)
 
   # If verbose
   if(verbose == TRUE) {
     verboseM(path_to_data, fp_index$course_name_type, user, password)
   }
 
-  # Drop table
-  res <- SQLQuery(paste0("DROP DATABASE IF EXISTS ", fp_index$course_name_type, ";"), user, password)
-  # Create table
-  res <- SQLQuery(paste0("CREATE DATABASE ", fp_index$course_name_type, ";"), user, password)
-
-  # Dump sql file
-  command_to_system <- paste0("mysql -u ", user, " -p", password, " -D ", fp_index$course_name_type, " < ", fp_index$sql_file)
+  # Dump table
+  command_to_system <- paste0("mongoimport -d ", database,
+                              " -c ", fp_index$collection, " --type json --file ",
+                              fp_index$unzipped_file_path)
   system(command_to_system)
+  # Create index type
+
 
   # Remove unzipped files
-  res <- unlink(fp_index$sql_file_folder, recursive = T)
+  res <- unlink(fp_index$unzipped_file_path, recursive = T)
 
 }
