@@ -7,10 +7,12 @@
 #' @param database database in which to store the collection of clickstream data (collection will be defined as course name)
 #' @param create_index Mongo can create an index on usernames, which speeds up queries considerably. Defaults to TRUE
 #' @param verbose Print verbose intermediate messages? Defaults to FALSE
+#' @param ... any other arguments needed to connect to mongodb (e.g. username, password, host)
 #' @seealso \code{\link{sqldump}}
 #' @examples \dontrun{
-#' # Dump forum SQL file for federalism course
-#' dumpSQL("/home/jasper/Documents/MOOC-DATA/Data_Dumps/federalism-001","forum",verbose = TRUE)
+#' # Dump clickstream file into mongo
+#' mongodump("/home/jasper/Documents/MOOC-DATA/Data_Dumps/configuringworld-001/configuringworld-001_clickstream_export.gz",
+#' verbose = TRUE)
 #' }
 #' @author Jasper Ginn
 #' @importFrom rmongodb mongo.create mongo.is.connected mongo.get.database.collections mongo.destroy mongo.index.create
@@ -87,8 +89,7 @@ mongodump <- function(path_to_clickstream,
   # Dump table
   command_to_system <- paste0("mongoimport -d ", database,
                               " -c ", fp_index$collection, " --type json --file ",
-                              fp_index$unzipped_file_path,
-                              " --jsonArray")
+                              fp_index$unzipped_file_path)
   system(command_to_system)
 
   # Create index on usernames to increase speed
@@ -108,7 +109,7 @@ mongodump <- function(path_to_clickstream,
   }
 
   # Remove unzipped files
-  res <- unlink(fp_index$unzipped_file_path, recursive = T)
+  res <- file.remove(fp_index$unzipped_file_path)
 
   # Return TRUE
   return(TRUE)
