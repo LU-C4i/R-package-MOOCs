@@ -8,14 +8,15 @@
 #' @param user Username for MySQL database. Defaults to 'root'
 #' @param password Password for MySQL database. Defaults to 'root'
 #' @param verbose Print verbose intermediate messages? Defaults to FALSE
-#' @seealso \code{\link{mongoDump}}
+#' @seealso \code{\link{mongodump}}
 #' @examples \dontrun{
-#' # Query for each url with questions for course 'configuringworld001'
-#' res <- actions_at_intervals(url, runtime, db_map, "configuringworld001", return_df = FALSE, issue.log = TRUE)
+#' # Dump forum SQL file for federalism course
+#' dumpSQL("/home/jasper/Documents/MOOC-DATA/Data_Dumps/federalism-001","forum",verbose = TRUE)
 #' }
 #' @author Jasper Ginn
-#' @importFrom RMySQL dbConnect, dbSendQuery, fetch, dbClearResult, dbDisconnect
-#' @importFrom stringr str_extract, str_replace_all
+#' @importFrom RMySQL MySQL
+#' @importFrom DBI dbClearResult dbConnect dbSendQuery fetch dbDisconnect
+#' @importFrom stringr str_extract str_replace_all
 #' @importFrom R.utils gunzip
 #' @export
 
@@ -29,7 +30,7 @@ dumpSQL <- function(path_to_data,
   type = match.arg(type)
 
   # verbose message
-  verbose <- function(path_to_data, sql_db, user, password) {
+  verboseM <- function(path_to_data, sql_db, user, password) {
     q1 <- paste0("Now storing file ", "'",path_to_data,"'")
     q2 <- paste0("To database ", "'",sql_db,"'")
     q3 <- paste0("With username ", "'",user,"'", " and password ", "'",password,"'")
@@ -56,7 +57,7 @@ dumpSQL <- function(path_to_data,
     return(check)
   }
 
-  # Helper 1: list files in folder, take the right one and return file, destination file etc. in a list ----
+  # Helper 2: list files in folder, take the right one and return file, destination file etc. in a list ----
 
   folderIndex <- function(path_to_data, type, user, password) {
     # List files in data folder
@@ -72,7 +73,7 @@ dumpSQL <- function(path_to_data,
     # Check if exists
     check <- getTables(user, password, course_name)
     if(check == TRUE) {
-      stop("Database already exists in MySQL database.")
+      stop("Table already exists in MySQL database.")
     }
     # create temporary folder for unzipped files
     tempFolder <- paste0(type, "_unzipped")
@@ -81,7 +82,7 @@ dumpSQL <- function(path_to_data,
     # filepath for unzipped sql file
     sql_fp <- paste0(path_to_data, "/", tempFolder, "/", course_name, ".sql")
     # unzip if not exists
-    if(!paste0(course_name, ".sql") %in% files) {
+    if(!paste0(course_name, ".sql") %in% list.files(sql_fp)) {
       gunzip(fPath, destname = sql_fp, remove = F)
     } else {
       print("File already unzipped. Moving on.")
@@ -112,7 +113,7 @@ dumpSQL <- function(path_to_data,
 
   # If verbose
   if(verbose == TRUE) {
-    verbose(path_to_data, fp_index$course_name_type, user, password)
+    verboseM(path_to_data, fp_index$course_name_type, user, password)
   }
 
   # Drop table
