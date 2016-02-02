@@ -12,8 +12,9 @@ MOOCs is an R package that contains general functions to work with the Coursera 
 
 ## Overview of functions
 
-	* [sqldump](https://github.com/LU-C4i/R-package-MOOCs/blob/master/R/sqldump.R) -- Stores session-based SQL dump into MySQL database
-	* [mongodump](https://github.com/LU-C4i/R-package-MOOCs/blob/master/R/mongodump.R) -- Stores session-based clickstream dump into Mongo database
+- [sqldump](https://github.com/LU-C4i/R-package-MOOCs/blob/master/R/sqldump.R) -- Stores session-based SQL dump into MySQL database
+
+- [mongodump](https://github.com/LU-C4i/R-package-MOOCs/blob/master/R/mongodump.R) -- Stores session-based clickstream dump into Mongo database
 
 ## Issues
 
