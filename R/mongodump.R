@@ -6,7 +6,9 @@
 #' @param path_to_clickstream Path to compressed archive with clickstream file
 #' @param database database in which to store the collection of clickstream data (collection will be defined as course name)
 #' @param create_index Mongo can create an index on usernames, which speeds up queries considerably. Defaults to TRUE
+#' @param index_value Which value will mongodb use for indexing?
 #' @param verbose Print verbose intermediate messages? Defaults to FALSE
+#' @param jsonArray Use the --jsonArray flag while importing documents to mongo. This treats the input as a jsonArray (see https://docs.mongodb.org/manual/reference/program/mongoimport/)
 #' @param ... any other arguments needed to connect to mongodb (e.g. username, password, host)
 #' @seealso \code{\link{sqldump}}
 #' @examples \dontrun{
@@ -16,14 +18,16 @@
 #' }
 #' @author Jasper Ginn
 #' @importFrom rmongodb mongo.create mongo.is.connected mongo.get.database.collections mongo.destroy mongo.index.create
-#' @importFrom stringr str_extract str_replace_all
+#' @importFrom stringr str_extract str_replace_all str_split
 #' @importFrom R.utils gunzip
 #' @export
 
 mongodump <- function(path_to_clickstream,
                       database = 'moocs',
                       create_index = TRUE,
+                      index_value = "username",
                       verbose = FALSE,
+                      jsonArray = FALSE,
                       ...) {
 
   # verbose message
@@ -31,8 +35,8 @@ mongodump <- function(path_to_clickstream,
     q1 <- paste0("Now storing file ", "'",path_to_clickstream,"'")
     q2 <- paste0("To database ", "'",database,"'", " and collection ", "'", collection, "'")
     q3 <- ifelse(create_index == T,
-                 paste0("Mongo will create an index on username to increase lookup speed"),
-                 paste0("Mongo will not create an index on username"))
+                 paste0("Mongo will create an index on ", index_value, " to increase lookup speed"),
+                 paste0("Mongo will not create an index on  ", index_value))
     cat(q1,"\n", q2, "\n",q3)
   }
 
@@ -87,21 +91,25 @@ mongodump <- function(path_to_clickstream,
   }
 
   # Dump table
-  command_to_system <- paste0("mongoimport -d ", database,
+  command_to_system <- ifelse(jsonArray == FALSE,
+                              paste0("mongoimport -d ", database,
                               " -c ", fp_index$collection, " --type json --file ",
-                              fp_index$unzipped_file_path)
+                              fp_index$unzipped_file_path), # If no JSON array
+                              paste0("mongoimport -d ", database,
+                                     " -c ", fp_index$collection, " --type json --file ",
+                                     fp_index$unzipped_file_path, " --jsonArray")) # If JSON array
   system(command_to_system)
 
   # Create index on usernames to increase speed
   if(create_index == TRUE) {
     if(getTables(database, fp_index$collection) != TRUE) {
-      stop("Collection was not imported properly. Cannot create index on username.")
+      stop(paste0("Collection was not imported properly. Cannot create index on ", index_value, "."))
     } else {
       # Create mongo connection to localhost
       mongo <- mongo.create(db = database, ...)
       # Create index
       if(mongo.is.connected(mongo) == TRUE) {
-        mongo.index.create(mongo, paste0(database, ".", fp_index$collection), list("username"=1))
+        mongo.index.create(mongo, paste0(database, ".", fp_index$collection), list(index_value=1))
       }
       # Destroy
       mongo.destroy(mongo)

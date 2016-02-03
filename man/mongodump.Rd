@@ -5,7 +5,7 @@
 \title{Import clickstream data into a mongodb}
 \usage{
 mongodump(path_to_clickstream, database = "moocs", create_index = TRUE,
-  verbose = FALSE, ...)
+  index_value = "username", verbose = FALSE, ...)
 }
 \arguments{
 \item{path_to_clickstream}{Path to compressed archive with clickstream file}
@@ -14,7 +14,11 @@ mongodump(path_to_clickstream, database = "moocs", create_index = TRUE,
 
 \item{create_index}{Mongo can create an index on usernames, which speeds up queries considerably. Defaults to TRUE}
 
+\item{index_value}{Which value will mongodb use for indexing?}
+
 \item{verbose}{Print verbose intermediate messages? Defaults to FALSE}
+
+\item{...}{any other arguments needed to connect to mongodb (e.g. username, password, host)}
 }
 \description{
 This function imports session-based JSON clickstream files into a mongodb database.
@@ -24,8 +28,9 @@ This function requires a running mongodb database (see: https://www.mongodb.org/
 }
 \examples{
 \dontrun{
-# Dump forum SQL file for federalism course
-dumpSQL("/home/jasper/Documents/MOOC-DATA/Data_Dumps/federalism-001","forum",verbose = TRUE)
+# Dump clickstream file into mongo
+mongodump("/home/jasper/Documents/MOOC-DATA/Data_Dumps/configuringworld-001/configuringworld-001_clickstream_export.gz",
+verbose = TRUE)
 }
 }
 \author{
