@@ -62,6 +62,14 @@ mongodump <- function(path_to_clickstream,
     # Take course name
     course_name <- str_split(path_to_clickstream, "/")
     course_name <- gsub("_clickstream_export.gz", "", course_name[[1]][length(course_name[[1]])])
+    # If file extension, remove
+    course_name <- "configuringworld-001.txt"
+    check <- ifelse(length(unlist(str_split(course_name, "\\."))) > 1,
+                    TRUE,
+                    FALSE)
+    if(check == TRUE) {
+      course_name <- str_split(course_name, "\\.")[[1]][1]
+    }
     # strip special characters
     course_name <- str_replace_all(course_name, "[[:punct:]]", "")
     # Check if exists
