@@ -5,7 +5,7 @@
 \title{Import clickstream data into a mongodb}
 \usage{
 mongodump(path_to_clickstream, database = "moocs", create_index = TRUE,
-  index_value = "username", verbose = FALSE, ...)
+  index_value = "username", verbose = FALSE, jsonArray = FALSE, ...)
 }
 \arguments{
 \item{path_to_clickstream}{Path to compressed archive with clickstream file}
@@ -17,6 +17,8 @@ mongodump(path_to_clickstream, database = "moocs", create_index = TRUE,
 \item{index_value}{Which value will mongodb use for indexing?}
 
 \item{verbose}{Print verbose intermediate messages? Defaults to FALSE}
+
+\item{jsonArray}{Use the --jsonArray flag while importing documents to mongo. This treats the input as a jsonArray (see https://docs.mongodb.org/manual/reference/program/mongoimport/)}
 
 \item{...}{any other arguments needed to connect to mongodb (e.g. username, password, host)}
 }
